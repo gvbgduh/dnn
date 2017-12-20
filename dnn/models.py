@@ -20,6 +20,10 @@ def update_parameters(parameters, grads, learning_rate):
 TODO's:
 * Generalize common bits to lower level abstract model.
 """
+class LayersNotProvided(Exception):
+    pass
+
+
 class PlainModel(object):
     def __init__(self):
         self.layers = []
@@ -48,6 +52,14 @@ class PlainModel(object):
         # TODO Use multithreading pool!?
         for l in self.layers:
             l.initialize()
+    
+    def forward_prop(self, X):
+        if not self.layers:
+            raise LayersNotProvided
+        
+        self.layers[0].input_data = X
+        for l in self.layers:
+            l.forward()
 
 
 class GraphModel(object):
@@ -88,14 +100,21 @@ class GraphModel(object):
             cur.initialize()
             cur = cur.next
 
-    def fit(self, X, Y):
-        pass
-
-    def forward(self):
-        pass
+    def forward_prop(self, X):
+        if self.first is None:
+            raise LayersNotProvided
+        
+        self.first.input_data = X
+        cur = self.first
+        while cur:
+            cur.forward()
+            cur = cur.next
 
     def backward(self):
         pass
 
     def update_parameters(self):
+        pass
+
+    def fit(self, X, Y):
         pass
