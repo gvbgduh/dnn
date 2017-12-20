@@ -2,7 +2,8 @@ import numpy as np
 
 
 class ActivationFunction(object):
-    def __init__(self, forward, backward):
+    def __init__(self, name, forward, backward):
+        self.name = name
         self.forward = forward
         self.backward = backward
 
@@ -27,7 +28,7 @@ def _sigmoid_backward(dA, cache):
         dA -- post-activation gradient, of any shape
         cache -- 'Z' where we store for computing backward propagation efficiently
     Returns:
-        dZ -- Gradient of the cost with respect to Z    
+        dZ -- Gradient of the cost with respect to Z
     """
     Z = cache
     s = 1/(1+np.exp(-Z))
@@ -47,7 +48,7 @@ def _relu(Z):
     """
     A = np.maximum(0,Z)
     assert(A.shape == Z.shape)
-    # cache = Z 
+    # cache = Z
     return A  #, cache
 
 
@@ -62,7 +63,7 @@ def _relu_backward(dA, cache):
     """
     Z = cache
     dZ = np.array(dA, copy=True) # just converting dz to a correct object.
-    # When z <= 0, you should set dz to 0 as well. 
+    # When z <= 0, you should set dz to 0 as well.
     dZ[Z <= 0] = 0
     assert (dZ.shape == Z.shape)
     return dZ
@@ -76,6 +77,6 @@ def _identity_backward(dA, cache):
     return np.ones(dA.shape)
 
 
-identity = ActivationFunction(_identity, _identity_backward)
-relu = ActivationFunction(_relu, _relu_backward)
-sigmoid = ActivationFunction(_sigmoid, _sigmoid_backward)
+identity = ActivationFunction('identity', _identity, _identity_backward)
+relu = ActivationFunction('relu', _relu, _relu_backward)
+sigmoid = ActivationFunction('sigmoid', _sigmoid, _sigmoid_backward)
