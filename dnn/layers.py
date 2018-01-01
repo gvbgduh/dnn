@@ -47,7 +47,7 @@ class Layer(object):
         self.db = None
 
         self.dA = None
-        self.dZ = None
+        self.dZ = None                  # Set externally 
 
     def __repr__(self):
         return 'Layer {}: {} units [{}]'.format(self.idx, self.units, self.activation.name)
@@ -81,3 +81,7 @@ class Layer(object):
             self.Z = np.dot(self.W, self.prev.A)
 
         self.A = self.activation.forward(self.Z)
+
+    def backward(self):
+        # Checks
+        pass

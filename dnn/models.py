@@ -25,8 +25,10 @@ class LayersNotProvided(Exception):
 
 
 class PlainModel(object):
-    def __init__(self):
+    def __init__(self, cost):
         self.layers = []
+        self.cost = cost
+        self.costs = []
 
     def __repr__(self):
         return 'Model: {} layers'.format(self.depth)
@@ -61,9 +63,26 @@ class PlainModel(object):
         for l in self.layers:
             l.forward()
 
+    def get_cost(self, Y):
+        cur_cost = self.cost.forward(self.layers[-1].A, Y)
+        self.costs.append(cur_cost)
+        return cur_cost
+    
+    def back_prop(self, Y):
+        l = self.layers[-1]
+        l.dZ = self.cost.backward(l.A, Y)
+
+    def fit(self, X, Y):
+        # Checks
+        self.initialize()
+        self.forward_prop(X)
+        self.get_cost(Y)
+        self.back_prop(Y)
+
 
 class GraphModel(object):
-    def __init__(self):
+    def __init__(self, cost):
+        self.cost = cost
         self.first = None
         self.last = None
         self.depth = 0
