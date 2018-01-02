@@ -21,7 +21,7 @@ def _sigmoid(Z):
     return A  #, cache
 
 
-def _sigmoid_backward(dA, cache):
+def _sigmoid_backward(dA, Z):
     """
     Implement the backward propagation for a single SIGMOID unit.
     Arguments:
@@ -30,7 +30,7 @@ def _sigmoid_backward(dA, cache):
     Returns:
         dZ -- Gradient of the cost with respect to Z
     """
-    Z = cache
+    # Z = cache
     s = 1/(1+np.exp(-Z))
     dZ = dA * s * (1-s)
     assert (dZ.shape == Z.shape)
@@ -52,7 +52,7 @@ def _relu(Z):
     return A  #, cache
 
 
-def _relu_backward(dA, cache):
+def _relu_backward(dA, Z):
     """
     Implement the backward propagation for a single RELU unit.
     Arguments:
@@ -61,7 +61,7 @@ def _relu_backward(dA, cache):
     Returns:
         dZ -- Gradient of the cost with respect to Z
     """
-    Z = cache
+    # Z = cache
     dZ = np.array(dA, copy=True) # just converting dz to a correct object.
     # When z <= 0, you should set dz to 0 as well.
     dZ[Z <= 0] = 0
@@ -70,10 +70,12 @@ def _relu_backward(dA, cache):
 
 
 def _identity(Z):
-    return Z
+    A = Z.copy()
+    return A
 
 
-def _identity_backward(dA, cache):
+def _identity_backward(dA, Z):
+    # Z is not relly needed here, but to keep funcs consistent
     return np.ones(dA.shape)
 
 

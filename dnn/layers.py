@@ -19,6 +19,10 @@ class ParametersAreNotInitialized(Exception):
     pass
 
 
+class NoDerivativeProvided(Exception):
+    pass
+
+
 class Layer(object):
     """
     Generic base class for a layer in the feedforward neural network.
@@ -26,7 +30,7 @@ class Layer(object):
      * units (int) - number of units in the layer
      * activation (function object) - activation function
     """
-    def __init__(self, units, activation, input_data=[], initializer=with_he, idx=None, input_dim=None):
+    def __init__(self, units, activation, input_data=[], initializer=with_he, idx=None, input_dim=None, learning_rate=None):
         self.idx = idx                  # Index of the layer, assigned in the model
         self.input_dim = input_dim
         self.units = units              # Number of units
@@ -34,12 +38,14 @@ class Layer(object):
         self.input_data = input_data    # Input vector X of A[l]
         self.initializer = initializer  # Init func
 
+        self.learning_rate = learning_rate
+
         self.next = None                # Next layer in the chain, assigned in the model
         self.prev = None                # Previous layer in the chain, assigned in the model
 
         self.W = None
         self.b = None
-        
+
         self.Z = None
         self.A = None
 
@@ -47,7 +53,16 @@ class Layer(object):
         self.db = None
 
         self.dA = None
-        self.dZ = None                  # Set externally 
+        self.dZ = None                  # Set externally
+
+    @property
+    def grads(self):
+        return {
+            'dZ': self.dZ,
+            'dA': self.dA,
+            'dW': self.dW,
+            'db': self.db
+        }
 
     def __repr__(self):
         return 'Layer {}: {} units [{}]'.format(self.idx, self.units, self.activation.name)
@@ -83,5 +98,33 @@ class Layer(object):
         self.A = self.activation.forward(self.Z)
 
     def backward(self):
-        # Checks
-        pass
+        # import pdb ; pdb.set_trace()
+        if self.dA is None:
+            raise NoDerivativeProvided('No dA provided')
+        if self.prev is None and self.idx != 1:
+            raise LayersChainIsBroken('Chain is broken or attempt to backprop the input layer')
+        if self.prev and self.prev.A is None and self.idx != 1:
+            raise LayersChainIsBroken('Chain is broken or no activation in the previous layer')
+        # import pdb ; pdb.set_trace()
+        m = self.prev.A.shape[1] if self.idx != 1 else self.input_dim
+
+        self.dZ = self.activation.backward(self.dA, self.Z)
+
+
+        self.db = (1. / m) * np.sum(self.dZ, axis=1, keepdims=True)
+        if self.idx != 1:
+            self.prev.dA = np.dot(self.W.T, self.dZ)
+            self.dW = (1. / m) * np.dot(self.dZ, self.prev.A.T)
+            assert (self.prev.dA.shape == self.prev.A.shape)
+        else:
+            self.dW = (1. / m) * np.dot(self.dZ, self.input_data.T)
+
+        assert (self.dW.shape == self.W.shape)
+        assert (self.db.shape == self.b.shape)
+
+    def update_params(self, learning_rate):
+        if self.learning_rate is not None:
+            learning_rate = self.learning_rate
+
+        self.W = self.W - learning_rate * self.dW
+        self.b = self.b - learning_rate * self.db

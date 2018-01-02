@@ -20,15 +20,20 @@ def update_parameters(parameters, grads, learning_rate):
 TODO's:
 * Generalize common bits to lower level abstract model.
 """
+import numpy as np
+
+
 class LayersNotProvided(Exception):
     pass
 
 
 class PlainModel(object):
-    def __init__(self, cost):
-        self.layers = []
+    def __init__(self, cost, learning_rate):
         self.cost = cost
+        self.learning_rate = learning_rate
+
         self.costs = []
+        self.layers = []
 
     def __repr__(self):
         return 'Model: {} layers'.format(self.depth)
@@ -54,30 +59,47 @@ class PlainModel(object):
         # TODO Use multithreading pool!?
         for l in self.layers:
             l.initialize()
-    
+
     def forward_prop(self, X):
         if not self.layers:
             raise LayersNotProvided
-        
+
         self.layers[0].input_data = X
-        for l in self.layers:
-            l.forward()
+        for layer in self.layers:
+            layer.forward()
 
     def get_cost(self, Y):
         cur_cost = self.cost.forward(self.layers[-1].A, Y)
         self.costs.append(cur_cost)
         return cur_cost
-    
-    def back_prop(self, Y):
-        l = self.layers[-1]
-        l.dZ = self.cost.backward(l.A, Y)
 
-    def fit(self, X, Y):
+    def backward_prop(self, Y):
+
+        assert (self.layers[-1].A.shape == Y.shape)
+        # Init so?
+        # dAL = - (np.divide(Y, self.layers[-1].A) - np.divide(1 - Y, 1 - self.layers[-1].A))
+        self.layers[-1].dA = self.cost.backward(self.layers[-1].A, Y)
+        # self.layers[-1].dA = dAL
+        for layer in self.layers[::-1]:
+            # import pdb ; pdb.set_trace()
+            layer.backward()
+
+    def update_parameters(self):
+        for layer in self.layers:
+            layer.update_params(self.learning_rate)
+
+    def fit(self, X, Y, epoches):
         # Checks
+        
         self.initialize()
-        self.forward_prop(X)
-        self.get_cost(Y)
-        self.back_prop(Y)
+        for i in range(epoches):
+            # import pdb; pdb.set_trace()
+            if i != 0:
+                self.update_parameters()
+            self.forward_prop(X)
+            cur_cost = self.get_cost(Y)
+            self.backward_prop(Y)
+            print('|' + '-' * 27 + '| ' + 'Cost: {:.4f}'.format(cur_cost))
 
 
 class GraphModel(object):
@@ -122,14 +144,14 @@ class GraphModel(object):
     def forward_prop(self, X):
         if self.first is None:
             raise LayersNotProvided
-        
+
         self.first.input_data = X
         cur = self.first
         while cur:
             cur.forward()
             cur = cur.next
 
-    def backward(self):
+    def backward_prop(self):
         pass
 
     def update_parameters(self):
